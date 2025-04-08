@@ -1,0 +1,31 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/src/linux-hwe-6.11-headers-6.11.0-19/include",
+                "/usr/src/linux-hwe-6.11-headers-6.11.0-19/arch/x86/include",
+                "/usr/local/include",
+                "/usr/src/linux-headers-6.11.0-19-generic/arch/x86/include/generated/asm",
+                "/usr/src/linux-headers-6.11.0-21-generic/arch/x86/include/generated/asm",
+                "/usr/src/linux-hwe-6.11-headers-6.11.0-19/arch/alpha/include/asm",
+                "/usr/src/linux-hwe-6.11-headers-6.11.0-19/arch/arm64/include/asm",
+                "/usr/src/linux-hwe-6.11-headers-6.11.0-19/arch/s390/include/asm",
+                "/usr/src/linux-hwe-6.11-headers-6.11.0-21/arch/alpha/include/asm",
+                "/usr/src/linux-hwe-6.11-headers-6.11.0-21/arch/arm64/include/asm",
+                "/usr/src/linux-hwe-6.11-headers-6.11.0-21/arch/s390/include/asm",
+                "/usr/src/linux-hwe-6.11-headers-6.11.0-19/include/linux/",
+                "/usr/src/linux-headers-6.11.0-19-generic/include/generated/",
+                "/usr/src/linux-headers-6.11.0-19-generic/include",
+                "/usr/src/linux-headers-6.11.0-19-generic/arch/x86/include/generated"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}
