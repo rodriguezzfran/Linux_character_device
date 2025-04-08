@@ -37,6 +37,21 @@ We can use `ls -l /dev` or `lsmod` to see the nodes (whit their major and minor 
 
 ## Development
 
+First, we have to install the header files for the kernel 
+
+```bash
+sudo apt-get update 
+apt-cache search linux-headers-`uname -r`
+```
+Then we can use the following comand to install the headers
+
+```bash
+sudo apt-get install kmod linux-headers-[version]-generic
+```
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/87640edd-3142-48a1-b04d-d16f2fe47ef0" alt="FPGA Diagram" style="box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.5);">
+</div>
+
  
 
 
