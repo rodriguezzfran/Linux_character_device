@@ -1,4 +1,4 @@
-# Linux_character_device
+# Linux character device
 Development of a character device driver as part of the Eclypsium Internship Interview Challenge
 
 ## Theoretical Framework  
