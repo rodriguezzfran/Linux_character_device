@@ -37,6 +37,23 @@ We can use `ls -l /dev` or `lsmod` to see the nodes (whit their major and minor 
 
 ## Development
 
+### Functional requirements
+
+* The device should accept writes from user-space programs.
+* Each write will be a string containing an integer number (positive or negative).
+* The driver will parse the number and accumulate it into an internal counter.
+* On a read() call, it should return the current accumulated value as a string.
+* If the driver is uninstalled, the count should be reseted.
+
+### Non-functional requirements
+
+* Must create a device node in /dev/myaccumulator (or similar).
+* Must implement the open, read, write, and release file operations.
+* Should not leak memory.
+* Should have unnit testing.
+
+
+
 First, we have to install the header files for the kernel 
 
 ```bash
@@ -51,6 +68,8 @@ sudo apt-get install kmod linux-headers-[version]-generic
 <div align="center">
   <img src="https://github.com/user-attachments/assets/87640edd-3142-48a1-b04d-d16f2fe47ef0" alt="FPGA Diagram" style="box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.5);">
 </div>
+
+
 
  
 
