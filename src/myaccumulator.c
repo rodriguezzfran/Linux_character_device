@@ -16,7 +16,7 @@
 static dev_t dev_num; // Device number, combination of major and minor numbers to identify a unique device
 static struct cdev accumDevice; // Character device structure, defines the device operations and holds the device number
 static struct class *accumClass = NULL; // Device class structure, used to create a class for the device
-static struct device *accumDeviceObj = NULL; // Device object structure, to create a node in /dev
+
 
 static long long accumulator = 0; // Accumulator variable to store the sum
 
@@ -49,15 +49,21 @@ static int dev_release(struct inode *inode, struct file *file) {
 
 static ssize_t dev_read(struct file *file, char __user *buffer, size_t len, loff_t *offset) {
     
-    char temp[BUFFER_SIZE];
+    char *user_data; // Buffer to store the data to be read
     int size;
+
+    user_data = kmalloc(BUFFER_SIZE, GFP_KERNEL);
+    if (!user_data) {
+        pr_err("myaccumulator: Failed to allocate memory for temp buffer\n");
+        return -ENOMEM;
+    }
 
     if (*offset  > 0) {
         return 0; // avoid reading again, a new read will see the end of the file
     }
 
     // snprintf is used to format the string, it returns the number of bytes written
-    size = snprintf(temp, BUFFER_SIZE, "%lld\n", accumulator);
+    size = snprintf(user_data, BUFFER_SIZE, "%lld\n", accumulator);
 
     // Check if the size is greater than the buffer size
     if (size < 0) {
@@ -66,7 +72,7 @@ static ssize_t dev_read(struct file *file, char __user *buffer, size_t len, loff
     }
 
     // Copy the data to user space
-    if (copy_to_user(buffer, temp, size)) {
+    if (copy_to_user(buffer, user_data, size)) {
         pr_err("myaccumulator: Error copying data to user space\n");
         return -EFAULT;
     }
@@ -80,11 +86,10 @@ static ssize_t dev_read(struct file *file, char __user *buffer, size_t len, loff
     return size; // Return the number of bytes read
 }
 
-
 static ssize_t dev_write (struct file *file, const char __user *buffer, size_t len, loff_t *offset) {
     
     char *kbuf; // Kernel buffer to store the data from user space
-    long value; // Value to accumulate
+    long  value; // Value to accumulate
 
     kbuf = kmalloc(len + 1, GFP_KERNEL); // Allocate memory for the kernel buffer, the +1 is for the null terminator at the beginning
     if (!kbuf) {
@@ -102,12 +107,12 @@ static ssize_t dev_write (struct file *file, const char __user *buffer, size_t l
     kbuf[len] = '\0'; // Null terminate the string
 
     // Convert the string to a long integer
-    if (kstrol(kbuf, 10, &value) == 0) {
+    if (kstrtol(kbuf, 10, &value) == 0) {
         
         accumulator += value; // Add the value to the accumulator
 
         // message in the kernel log
-        pr_info("myaccumulator: Accumulated %lld, new value: %lld\n", value, accumulator);
+        pr_info("myaccumulator: Value accumulated");
     }else{
         kfree(kbuf); // Free the kernel buffer
         pr_err("myaccumulator: Error converting string to long\n");
@@ -118,7 +123,9 @@ static ssize_t dev_write (struct file *file, const char __user *buffer, size_t l
     return len; // Return the number of bytes written
 }
 
-// Module initialization function
+/**
+ * * @brief kernel structure to define which functions are called when the device is opened, read, written or closed
+ */
 static struct file_operations fops = {
     .owner = THIS_MODULE,
     .open = device_open,
@@ -126,6 +133,71 @@ static struct file_operations fops = {
     .read = dev_read,
     .write = dev_write,
 };
+
+// Module initialization function
+static int __init myaccumulator_init(void) {
+
+    // Allocate a device number, 0 means it is the first device, 1 means the amount of devices.
+    if( alloc_chrdev_region(&dev_num, 0, 1, DEVICE_NAME) < 0) {
+        pr_err("myaccumulator: Failed to allocate device number\n");
+        return -1; // Return error if allocation fails
+    }else{
+        pr_info("myaccumulator: Device number allocated: %d\n", MAJOR(dev_num));
+    }
+
+    // initialize the cdev structure
+    cdev_init(&accumDevice, &fops);
+    accumDevice.owner = THIS_MODULE; // Set the owner of the device to this module
+
+    // Add the device to the system
+    if (cdev_add(&accumDevice, dev_num, 1) < 0) {
+        pr_err("myaccumulator: Failed to add device to system\n");
+        unregister_chrdev_region(dev_num, 1); // Unregister the device number
+        return -1; // Return error if adding fails
+    }else{
+        pr_info("myaccumulator: Device added to system\n");
+    }
+
+    // Create a class for the device
+    accumClass = class_create(CLASS_NAME);
+    if(IS_ERR(accumClass)) {
+        pr_err("myaccumulator: Failed to create class\n");
+        cdev_del(&accumDevice); // Delete the device
+        unregister_chrdev_region(dev_num, 1); // Unregister the device number
+        return PTR_ERR(accumClass); // Return error if class creation fails
+    }else{
+        pr_info("myaccumulator: Class created\n");
+    }
+
+    // Create a device 
+    if (device_create(accumClass, NULL, dev_num, NULL, DEVICE_NAME) == NULL) {
+        pr_err("myaccumulator: Failed to create device\n");
+        class_destroy(accumClass); // Destroy the class
+        cdev_del(&accumDevice); // Delete the device
+        unregister_chrdev_region(dev_num, 1); // Unregister the device number
+        return -1; // Return error if device creation fails
+    }else{
+        pr_info("myaccumulator: Device created\n");
+    }
+    
+    return 0; 
+}
+
+// Module exit function
+static void __exit myaccumulator_exit(void) {
+    
+    device_destroy(accumClass, dev_num); // Destroy the device
+    class_destroy(accumClass); // Destroy the class
+    cdev_del(&accumDevice); // Delete the device
+    unregister_chrdev_region(dev_num, 1); // Unregister the device number
+
+    pr_info("myaccumulator: Device removed\n");
+}
+
+// Register the initialization and exit functions
+module_init(myaccumulator_init); // Register the initialization function
+module_exit(myaccumulator_exit); // Register the exit function
+
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Franco Rodriguez");
