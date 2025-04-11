@@ -142,7 +142,7 @@ static int __init myaccumulator_init(void) {
         pr_err("myaccumulator: Failed to allocate device number\n");
         return -1; // Return error if allocation fails
     }else{
-        pr_info("myaccumulator: Device number allocated: %d\n", MAJOR(dev_num));
+        pr_info("myaccumulator: Registered with major number: %d\n", MAJOR(dev_num));
     }
 
     // initialize the cdev structure
