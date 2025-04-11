@@ -17,7 +17,6 @@ static dev_t dev_num; // Device number, combination of major and minor numbers t
 static struct cdev accumDevice; // Character device structure, defines the device operations and holds the device number
 static struct class *accumClass = NULL; // Device class structure, used to create a class for the device
 
-
 static long long accumulator = 0; // Accumulator variable to store the sum
 
 static int device_open(struct inode *inode, struct file *file) {
@@ -26,12 +25,14 @@ static int device_open(struct inode *inode, struct file *file) {
     pid_t pid = current->pid;
     const char *cmd = current->comm;
 
+    /*
     // Only allow access if the UID is root
     if (uid.val != 0) {
         pr_warn("myaccumulator: Device open denied - PID %d, UID %d, comando: %s\n",
                 pid, uid.val, cmd);
         return -EACCES;  
     }
+    */
 
     // If everything is ok, we can open the device
     pr_info("myaccumulator: Device opened - PID %d, UID %d, comando: %s\n",
@@ -123,9 +124,6 @@ static ssize_t dev_write (struct file *file, const char __user *buffer, size_t l
     return len; // Return the number of bytes written
 }
 
-/**
- * * @brief kernel structure to define which functions are called when the device is opened, read, written or closed
- */
 static struct file_operations fops = {
     .owner = THIS_MODULE,
     .open = device_open,
