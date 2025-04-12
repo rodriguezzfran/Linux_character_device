@@ -52,8 +52,6 @@ We can use `ls -l /dev` or `lsmod` to see the nodes (whit their major and minor 
 * Should not leak memory.
 * Should have unnit testing.
 
-
-
 First, we have to install the header files for the kernel 
 
 ```bash
@@ -68,6 +66,10 @@ sudo apt-get install kmod linux-headers-[version]-generic
 <div align="center">
   <img src="https://github.com/user-attachments/assets/87640edd-3142-48a1-b04d-d16f2fe47ef0" alt="FPGA Diagram" style="box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.5);">
 </div>
+
+This kernel module contains the basic functions of each module.
+
+It includes the open and release functions to access the module, read and write functions to use it, and exit and init functions for installation.
 
 
 
