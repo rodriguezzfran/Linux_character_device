@@ -113,6 +113,105 @@ To clean the project after building run
 sudo ./install.sh --clean
 ```
 
+## Use the module
+
+Now the module is installed and ready to be used. Whit the `dmesg` command you can see the kernel's message buffer and should be something like this
+
+```bash
+User@UserPC:~$ sudo dmesg | grep myaccumulator
+[ 4276.234253] myaccumulator: Registered with major number: 506
+[ 4276.234257] myaccumulator: Device added to system
+[ 4276.234272] myaccumulator: Class created
+[ 4276.234319] myaccumulator: Device created
+```
+You can interact with the module through the terminal with commands like `echo` whit tee/sh or `cat` directly.
+
+```bash
+User@UserPC:~$ sudo cat /dev/myaccumulator 
+0
+User@UserPC:~$ sudo sh -c 'echo 10 > /dev/myaccumulator'
+User@UserPC:~$ echo 40 | sudo tee /dev/myaccumulator 
+User@UserPC:~$ sudo cat /dev/myaccumulator 
+50 
+```
+Or using the functions `open()`, `read()`, `write()` among others in a `.c` source code. For example
+
+```C
+int main() {
+    int fd = open("/dev/myaccumulator", O_RDWR);
+    if (fd < 0) {
+        perror("open");
+        return 1;
+    }
+
+    char input[64], buffer[64];
+
+    while (1) {
+        printf("Enter number, 'read' or 'exit': ");
+        fgets(input, sizeof(input), stdin);
+        input[strcspn(input, "\n")] = 0;
+
+        if (!strcmp(input, "exit")) break;
+
+        if (!strcmp(input, "read")) {
+            lseek(fd, 0, SEEK_SET);
+            int n = read(fd, buffer, sizeof(buffer) - 1);
+            if (n > 0) {
+                buffer[n] = 0;
+                printf("Value: %s", buffer);
+            } else {
+                perror("read");
+            }
+        } else {
+            strcat(input, "\n");
+            if (write(fd, input, strlen(input)) < 0)
+                perror("write");
+        }
+    }
+
+    close(fd);
+    return 0;
+}
+```
+This should give the following result
+
+```bash
+User@UserPC:~/Desktop$ sudo ./driver_test.o 
+Enter number, 'read' or 'exit': read
+Value: 0
+Enter number, 'read' or 'exit': 140
+Written successfully.
+Enter number, 'read' or 'exit': exit
+User@UserPC:~/Desktop$ sudo ./driver_test.o 
+Enter number, 'read' or 'exit': read
+Value: 140
+```
+If you use again the `dmesg` command you can see everything you do.
+
+```bash
+[ 9210.255137] myaccumulator: Device opened - PID 10902, UID 0, comando: driver_test.o
+[ 9255.462578] myaccumulator: Device opened - PID 10918, UID 0, comando: sh
+[ 9255.462591] myaccumulator: Value accumulated
+[ 9255.462594] myaccumulator: Device closed by PID 10918
+[ 9258.754772] myaccumulator: Device opened - PID 10926, UID 0, comando: cat
+[ 9258.754790] myaccumulator: Read 0 from device
+[ 9258.754810] myaccumulator: Device closed by PID 10926
+[ 9263.399282] myaccumulator: Read 0 from device
+[ 9266.296044] myaccumulator: Value accumulated
+[ 9268.677261] myaccumulator: Device closed by PID 10902
+[ 9269.914452] myaccumulator: Device opened - PID 10936, UID 0, comando: driver_test.o
+[ 9274.370056] myaccumulator: Read 140 from device
+[ 9364.097250] myaccumulator: Device closed by PID 10936
+```
+## Testing
+
+
+
+
+
+
+
+
 
  
 
