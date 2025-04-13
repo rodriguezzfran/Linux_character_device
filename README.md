@@ -27,14 +27,6 @@ For example, if we have a disk driver with a major number of 8, the different di
 
 We can use `ls -l /dev` or `lsmod` to see the nodes (whit their major and minor number) or the active kernel modules.
 
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/1fef1c4b-ca28-4bdd-86f3-e5fa377559b1" alt="FPGA Diagram" style="box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.5);">
-</div>
-
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/b4297899-2bcf-47da-a937-5d4cb5c54470" alt="FPGA Diagram" style="box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.5);">
-</div>
-
 ## Development
 
 ### Functional requirements
@@ -52,6 +44,8 @@ We can use `ls -l /dev` or `lsmod` to see the nodes (whit their major and minor 
 * Should not leak memory.
 * Should have unnit testing.
 
+## Build
+
 First, we have to install the header files for the kernel 
 
 ```bash
@@ -63,14 +57,61 @@ Then we can use the following comand to install the headers
 ```bash
 sudo apt-get install kmod linux-headers-[version]-generic
 ```
-<div align="center">
-  <img src="https://github.com/user-attachments/assets/87640edd-3142-48a1-b04d-d16f2fe47ef0" alt="FPGA Diagram" style="box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.5);">
-</div>
 
-This kernel module contains the basic functions of each module.
+This kernel module contains the basic functions of each module. It includes the open and release functions to access the module, read and write functions to use it, and exit and init functions for installation.
 
-It includes the open and release functions to access the module, read and write functions to use it, and exit and init functions for installation.
+You can use the `install.sh` script to make the whole process of using the module easier. To see the different usage options use the following commands in the console
 
+```bash
+sudo chmod +x install.sh
+sudo ./install.sh --help
+```
+Since the build and mounting process is very different depending on whether the user has Secure Boot enabled or not, the install script has differents order for the commands
+
+### Building using secure boot
+
+First, we have to build the project
+
+```bash
+sudo ./install.sh --build
+```
+This generates the `build` directory where all the generated files are moved, including the module itself.
+
+The kernel does not allow unsigned modules to be loaded. This is to prevent malicious drivers from sneaking into the system. To do this, you must generate a key pair and use the sign-file script to sign the module. The public part of the key must be imported into the system using the Machine Owner Key (MOK) framework.
+
+```bash
+sudo ./install.sh --sign
+```
+A `Keys` directory is generated to store your own key locally and signs the module. Then you have to reboot your pc to use the MOK administrator to upload your key to the system.
+
+Finally yo use the following option to mount the module
+
+```bash
+sudo ./install.sh --install
+```
+
+### Building without Secure Boot
+
+This is more easyer since we dont have to sign the module. The steps are the same without the need to sign the module and the reboot.
+
+```bash
+sudo ./install.sh --build
+sudo ./install.sh --install
+````
+### After build
+
+The scripts also has two more option to facilitate the unmounting and cleaning process
+
+To unmount the kernell module run
+
+```bash
+sudo ./install.sh --uninstall
+```
+To clean the project after building run
+
+```bash
+sudo ./install.sh --clean
+```
 
 
  
