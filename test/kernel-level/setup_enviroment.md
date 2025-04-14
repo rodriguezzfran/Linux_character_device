@@ -94,7 +94,7 @@ mkdir /mnt/host
 mount -t 9p -o trans=virtio hostshare /mnt/host
 ```
 
-### init quemu
+### init qemu
 
 ```bash
 qemu-system-x86_64 \
