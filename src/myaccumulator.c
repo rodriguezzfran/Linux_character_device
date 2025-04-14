@@ -36,13 +36,6 @@ static int device_open(struct inode *inode, struct file *file) {
     pid_t pid = current->pid;
     const char *cmd = current->comm;
 
-    // Only allow access if the UID is root
-    if (uid.val != 0) {
-        pr_warn("myaccumulator: Device open denied - PID %d, UID %d, comando: %s\n",
-                pid, uid.val, cmd);
-        return -EACCES;  
-    }
-
     // If everything is ok, we can open the device
     pr_info("myaccumulator: Device opened - PID %d, UID %d, comando: %s\n",
             pid, uid.val, cmd);
@@ -160,15 +153,22 @@ static ssize_t dev_write (struct file *file, const char __user *buffer, size_t l
 
     // Convert the string to a long integer
     if (kstrtol(kbuf, 10, &value) == 0) {
-        
-        accumulator += value; // Add the value to the accumulator
 
-        // message in the kernel log
-        pr_info("myaccumulator: Value accumulated");
-    }else{
-        kfree(kbuf); // Free the kernel buffer
+        // Check for overflow or underflow before performing the addition
+        if ((value > 0 && accumulator > LONG_MAX - value) || (value < 0 && accumulator < LONG_MIN - value)) {
+            pr_err("myaccumulator: Overflow or underflow detected. Accumulation aborted.\n");
+            kfree(kbuf);  // Free the kernel buffer
+            return -EOVERFLOW;  // Return overflow error code
+        }
+        
+        // Perform the addition if no overflow
+        accumulator += value;
+
+        pr_info("myaccumulator: Value accumulated.\n");
+    } else {
+        kfree(kbuf);  // Free the kernel buffer
         pr_err("myaccumulator: Error converting string to long\n");
-        return -EINVAL; // Return error if conversion fails
+        return -EINVAL;  // Return error if conversion fails
     }
 
     kfree(kbuf); // Free the kernel buffer
@@ -259,7 +259,6 @@ static void __exit myaccumulator_exit(void) {
 // Register the initialization and exit functions
 module_init(myaccumulator_init); // Register the initialization function
 module_exit(myaccumulator_exit); // Register the exit function
-
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Franco Rodriguez");
