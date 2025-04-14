@@ -203,6 +203,33 @@ If you use again the `dmesg` command you can see everything you do.
 [ 9274.370056] myaccumulator: Read 140 from device
 [ 9364.097250] myaccumulator: Device closed by PID 10936
 ```
+## Memory Leak
+
+To ensure this linux kernel module is free of memory leaks, I set up a test environment by building a secondary Linux kernel with the configuration option `CONFIG_DEBUG_KMEMLEAK=y`. This option enables the `kmemleak` subsystem, kmemleak is a lightweight memory leak detector that works by scanning kernel memory and tracking unreachable allocations over time.
+
+The system was emulated with QEMU using the `6.8.4` linux kernel's version , allowing full control over kernel boot parameters and module testing without affecting the host environment. Once booted, I loaded my original kernel module ( the same one that was built in the host system) into the test kernel and began interacting with it from user space using its character device interface `/dev/myaccumulator`.
+
+Test for leaks:
+
+* Mount the original driver and use it like always with `cat` and `echo` commands. After a while you can see it doesnt́ have memory leaks repported.
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/47829127-8c12-46d9-a60d-0f8e2d332b24" alt="memleak first test" width="70%">
+</div>
+
+* Deliberately introduced memory leaks in `read()` and `write()` function of the module by allocating memory with `kmalloc()` but without free it, simulating a leak. Whit the same process of the original we get:
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/76b9ada2-83bf-400f-9263-19607f9007c7" alt="memleak first test" width="70%">
+</div>
+
+This entry shows a `1024-byte` allocation made by a `cat` command calling `dev_read()` function, which was never freed, resulting in a memory leak.
+
+
+
+
+
+
 ## Testing
 
 
