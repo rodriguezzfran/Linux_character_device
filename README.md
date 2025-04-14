@@ -225,12 +225,18 @@ Test for leaks:
 
 This entry shows a `1024-byte` allocation made by a `cat` command calling `dev_read()` function, which was never freed, resulting in a memory leak.
 
-
-
-
-
-
 ## Testing
+
+
+
+
+
+
+
+
+
+
+
 
 
 
