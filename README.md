@@ -227,6 +227,20 @@ This entry shows a `1024-byte` allocation made by a `cat` command calling `dev_r
 
 ## Testing
 
+We can test the module in 2 ways:
+* User-level 
+* Kernel-level
+
+For the first one you can find in the `test/user-level` directory a small pyhton script which uses `unittest` python module as a test suite. run the following command to perform it
+
+```bash
+cd test/user-level
+python3 test.py
+```
+If you want a more advanced testing you can use `KUnit`. KUnit is the official unit testing framework for the Linux kernel. It allows writing and running tests directly within the kernel, in isolation and without relying on hardware or user-space tools.
+
+In the `test/kernel-level` directory you can find a `setup_enviroment.md` with instructions for build the `6.8.4` version of the Linux kernel, how to activate the necessary flags to use kunit and kmemleak and be able to emulate it with qemu.
+
 
 
 
