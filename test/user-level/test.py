@@ -141,6 +141,14 @@ class TestMyAccumulator(unittest.TestCase):
         self.assertEqual(value, max_value)
         print("[+] test overflow_handling passed")
         sys.stdout.flush()
+        
+    def tearDown(self):
+        # Reset the device after each test
+        with open(DEVICE_PATH, "r") as dev:
+            value = int(dev.read().strip())
+        with open(DEVICE_PATH, "w") as dev:
+            dev.write(f"{-value}\n")
+        return super().tearDown()
   
 if __name__ == "__main__":
     print("Checking environment...")
@@ -162,6 +170,4 @@ if __name__ == "__main__":
 
     print("[+] Environment OK. Running tests...\n")
     unittest.main()
-    print("\n[+] Tests completed.")
-    reset_device()
     
