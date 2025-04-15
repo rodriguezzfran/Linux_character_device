@@ -8,6 +8,7 @@
 #include <linux/device.h> // For device creation like device_create, device_destroy, create the node in /dev, etc.
 #include <linux/sched.h> // For scheduling functions
 #include <linux/cred.h> // For current macro to get the current task structure
+#include <linux/mutex.h> // For mutex operations
 
 #define DEVICE_NAME "myaccumulator" // Name of the device
 #define CLASS_NAME "myaccumulator_class" // Name of the class
@@ -18,6 +19,9 @@ static struct cdev accumDevice; // Character device structure, defines the devic
 static struct class *accumClass = NULL; // Device class structure, used to create a class for the device
 
 static long long accumulator = 0; // Accumulator variable to store the sum
+
+// Mutex to protect the accumulator variable from concurrent access
+static DEFINE_MUTEX(accumulator_mutex);
 
 /**
  * @brief Handles attempts to open the character device.
@@ -89,8 +93,13 @@ static ssize_t dev_read(struct file *file, char __user *buffer, size_t len, loff
         return -ENOMEM;
     }
 
+    // Lock the mutex to protect the accumulator variable
+    mutex_lock(&accumulator_mutex);
+
     // snprintf is used to format the string, it returns the number of bytes written
     size = snprintf(user_data, BUFFER_SIZE, "%lld\n", accumulator);
+
+    mutex_unlock(&accumulator_mutex); // Unlock the mutex
 
     // Check if the size is greater than the buffer size
     if (size < 0) {
@@ -154,15 +163,19 @@ static ssize_t dev_write (struct file *file, const char __user *buffer, size_t l
     // Convert the string to a long integer
     if (kstrtol(kbuf, 10, &value) == 0) {
 
+        // Lock the mutex to protect the accumulator variable
+        mutex_lock(&accumulator_mutex);
         // Check for overflow or underflow before performing the addition
         if ((value > 0 && accumulator > LONG_MAX - value) || (value < 0 && accumulator < LONG_MIN - value)) {
             pr_err("myaccumulator: Overflow or underflow detected. Accumulation aborted.\n");
+            mutex_unlock(&accumulator_mutex); // Unlock the mutex
             kfree(kbuf);  // Free the kernel buffer
             return -EOVERFLOW;  // Return overflow error code
         }
         
         // Perform the addition if no overflow
         accumulator += value;
+        mutex_unlock(&accumulator_mutex); // Unlock the mutex
 
         pr_info("myaccumulator: Value accumulated.\n");
     } else {

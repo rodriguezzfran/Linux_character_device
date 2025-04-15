@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 import unittest
+import multiprocessing
+import time
 import os
+import random
+import signal
+import errno
 import stat
 import subprocess
 import sys
@@ -141,6 +146,37 @@ class TestMyAccumulator(unittest.TestCase):
         self.assertEqual(value, max_value)
         print("[+] test overflow_handling passed")
         sys.stdout.flush()
+    
+    def test_concurrent_writes(self):
+        num_processes = 500
+        writes_per_process = 100
+        expected_total = multiprocessing.Value('q', 0)
+
+        def writer(expected_total):
+            local_sum = 0
+            for _ in range(writes_per_process):
+                value = random.randint(-1000, 1000)
+                local_sum += value
+                with open(DEVICE_PATH, "w") as f:
+                    f.write(f"{value}\n")
+            with expected_total.get_lock():
+                expected_total.value += local_sum
+
+        processes = [multiprocessing.Process(target=writer, args=(expected_total,)) for _ in range(num_processes)]
+        for p in processes:
+            p.start()
+        for p in processes:
+            p.join()
+
+        # Let the kernel flush if needed
+        time.sleep(0.5)
+
+        with open(DEVICE_PATH, "r") as f:
+            result = int(f.read().strip())
+
+        self.assertEqual(result, expected_total.value,
+            msg=f"\n[INFO] Total expected: {expected_total.value}\n[INFO] Actual read: {result}\n[WARNING] Concurrency issue likely present.")
+        print("[+] test concurrent_writes passed")
         
     def tearDown(self):
         # Reset the device after each test
